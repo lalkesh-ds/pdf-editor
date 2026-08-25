@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Local PDF Text Editor</title>
+<link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <h1>Local PDF Text Editor</h1>
+  <span class="privacy-note">Your files stay on this computer.</span>
+</header>
+
+<p class="privacy-banner">
+  Your PDF is processed locally on this computer. No file is uploaded to a cloud server.
+</p>
+
+<div id="upload-screen" class="upload-screen">
+  <div class="upload-box">
+    <h2>Open a PDF</h2>
+    <input type="file" id="file-input" accept="application/pdf" />
+    <p id="upload-error" class="error-text"></p>
+  </div>
+</div>
+
+<div id="editor-screen" class="editor-screen hidden">
+
+  <div class="viewer-pane">
+    <div class="toolbar">
+      <button id="prev-page">◀ Prev</button>
+      <span>Page <input type="number" id="page-input" min="1" value="1" /> / <span id="page-count">1</span></span>
+      <button id="next-page">Next ▶</button>
+      <span class="divider"></span>
+      <button id="zoom-out">−</button>
+      <span id="zoom-level">150%</span>
+      <button id="zoom-in">+</button>
+      <span class="divider"></span>
+      <button id="add-text-mode" class="mode-btn">＋ Add Text</button>
+      <span class="divider"></span>
+      <button id="undo-btn" disabled>Undo</button>
+      <button id="redo-btn" disabled>Redo</button>
+      <span class="divider"></span>
+      <button id="export-btn" class="primary-btn">Export Edited PDF</button>
+    </div>
+
+    <p id="scanned-warning" class="warning-banner hidden">
+      This page appears to be scanned or image-based. Existing text may not be directly editable.
+    </p>
+    <p id="edit-warning" class="warning-banner hidden"></p>
+
+    <div class="canvas-scroll">
+      <div id="page-container" class="page-container">
+        <img id="page-image" alt="PDF page" />
+        <div id="overlay-layer" class="overlay-layer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <div id="file-info" class="file-info"></div>
+
+    <div id="select-hint" class="hint">
+      Click on any existing text in the page to edit it, or use "Add Text" to place new text.
+    </div>
+
+    <div id="edit-panel" class="panel hidden">
+      <h3>Edit Text</h3>
+      <label>Current text</label>
+      <div id="current-text" class="readonly-text"></div>
+      <label for="replacement-text">Replacement text</label>
+      <textarea id="replacement-text" rows="4"></textarea>
+
+      <label>Font Size</label>
+      <div class="font-size-row">
+        <button id="font-size-minus" type="button">−</button>
+        <input type="number" id="font-size-input" step="0.5" min="0.5" />
+        <button id="font-size-plus" type="button">+</button>
+        <span>pt</span>
+      </div>
+      <button id="font-size-reset" type="button" class="reset-link">Reset to Original Size</button>
+
+      <div class="span-meta" id="span-meta"></div>
+      <div class="panel-actions">
+        <button id="save-edit-btn" class="primary-btn">Save Change</button>
+        <button id="cancel-edit-btn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="add-panel" class="panel hidden">
+      <h3>Add New Text</h3>
+      <p class="hint small">Click a location on the page to place the text.</p>
+      <label for="add-text-input">Text</label>
+      <textarea id="add-text-input" rows="3"></textarea>
+      <label for="add-font-size">Font size</label>
+      <input type="number" id="add-font-size" value="12" min="4" max="200" />
+      <label for="add-color">Color</label>
+      <input type="color" id="add-color" value="#000000" />
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="add-bold" /> Bold</label>
+        <label><input type="checkbox" id="add-italic" /> Italic</label>
+      </div>
+      <div class="panel-actions">
+        <button id="save-add-btn" class="primary-btn" disabled>Place Text</button>
+        <button id="cancel-add-btn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="status-log" class="status-log"></div>
+  </div>
+
+</div>
+
+<script src="/static/scripts.js"></script>
+</body>
+</html>
