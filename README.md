@@ -1,224 +1,263 @@
-# Local PDF Text Editor
+# 📄 PDF Studio Pro
 
-**Edit text directly inside a PDF — click a span, retype it, add new text, and export a clean copy. 100% local, no uploads, no accounts.**
+<div align="center">
 
-![Python](https://img.shields.io/badge/python-3.11-blue.svg)
-![Backend](https://img.shields.io/badge/backend-FastAPI-009688.svg)
-![PDF Engine](https://img.shields.io/badge/pdf%20engine-PyMuPDF-orange.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
-![Local Only](https://img.shields.io/badge/data-100%25%20local-brightgreen.svg)
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![PyMuPDF](https://img.shields.io/badge/PyMuPDF-1.24+-FF6F00?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Cloud Ready](https://img.shields.io/badge/Deploy-Render%20%7C%20Railway%20%7C%20Heroku-46E3B7?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)
 
-Local PDF Text Editor is a self-hosted, browser-based tool for making direct text edits to a PDF. It runs entirely on `localhost`: there's no upload step, no account, no database, and no telemetry — your files never leave your machine.
+**A professional, full-featured Web & Cloud PDF Editor engineered with FastAPI and PyMuPDF.**  
+*Edit existing PDF text directly in-place with auto-detected font styles, reposition text with magnetic snapping guidelines, draw or type signatures, apply permanent vector redactions, draw shapes, manage pages, and export clean, high-fidelity PDFs.*
+
+[Key Features](#-key-features) • [System Architecture](#-system-architecture) • [Live Cloud Deployment](#-cloud-deployment-guide) • [API Reference](#-api-endpoints) • [Quick Start](#-quick-start)
 
 ---
 
-## Table of Contents
+</div>
 
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Getting Started](#getting-started)
-- [Usage Guide](#usage-guide)
-- [Supported PDF Types](#supported-pdf-types)
-- [Limitations](#limitations)
-- [Troubleshooting](#troubleshooting)
-- [Project Structure](#project-structure)
-- [Privacy & Data Handling](#privacy--data-handling)
-- [Extending This Project](#extending-this-project)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
+## 🌟 Overview
 
-## Key Features
+**PDF Studio Pro** provides true in-place WYSIWYG PDF editing right in the web browser. Unlike conventional tools that simply overlay HTML text boxes on top of images, PDF Studio Pro modifies the underlying PDF vector stream using high-performance MuPDF primitives.
 
-**Viewing**
-- Upload a PDF and page through it (previous/next, jump-to-page, zoom)
-- Pages with no extractable text (typically scans) are flagged automatically
+Whether running locally on a personal workstation or deployed to cloud platforms (Render, Railway, AWS, DigitalOcean, Docker), PDF Studio Pro delivers a frictionless, desktop-grade editing experience with zero third-party telemetry.
 
-**Editing**
-- Click any text span to select it and see its current text, font, size, and style
-- Replace text in place — position, approximate font family/weight, size, color, and rotation all carry over automatically
-- Automatic shrink-to-fit (down to 6pt) if your replacement text runs long, with an explicit warning rather than a broken layout if it still doesn't fit
-- **Add Text** mode: click anywhere to drop in new text, with controls for size, color, bold, and italic
-- Session-level undo/redo
+---
 
-**Export**
-- One-click export to a new file (`yourfile_edited.pdf`) — your original upload is never modified
-- Text removal uses real PDF redaction, not a rectangle painted over the old text
-- Existing images, vector graphics, and untouched text are preserved as real PDF content, not flattened into a picture
+## ✨ Key Features
 
-## Architecture
+### 1. In-Place WYSIWYG Text Editing
+- **Direct Click-to-Edit**: Click any existing text block to convert it into a pixel-perfect inline editor at its exact baseline coordinates.
+- **Auto-Detected Font & Style**:
+  - Automatically identifies font family (Standard Base-14 Helvetica/Arial, Times Roman, Courier).
+  - Preserves exact point size ($pt$), bold and italic weightings, and original RGB/Hex text color.
+- **Magnetic Drag Repositioning**:
+  - Drag text anywhere on the page with magnetic snapping to neighboring baselines, margins, and centerlines.
+  - **Auto-Commit on Drop**: Release the mouse (`mouseup`) and the position commits instantly without requiring manual confirmation dialogs.
+  - Sub-pixel baseline translation preserves exact vertical alignment with adjacent text blocks.
+- **One-Click Text Alignment**: Quick-align to `Left`, `Center`, or `Right` with immediate document-level updates.
+- **Click-to-Type Anywhere**: Click on any empty space to add new text elements on demand.
 
-| Layer | Technology | Responsibility |
-|-------|-----------|-----------------|
-| **Backend** | FastAPI + [PyMuPDF](https://pymupdf.readthedocs.io/) (`fitz`) | Opens the PDF, extracts each text span's position/font/size/color, applies redaction-based edits, and renders the exported file |
-| **Frontend** | HTML, CSS, vanilla JavaScript | Displays each page as an image and overlays invisible clickable regions exactly over the real text, so a click maps precisely to the span beneath it |
+### 2. Signatures & Digital Stamps
+- **Multi-Modal Signature Suite**:
+  - **Draw**: Interactive HTML5 canvas with smooth Bezier curve interpolation, adjustable stroke width, and authentic ink tones (Black, Navy Blue, Forest Green).
+  - **Type**: Generate elegant cursive signatures powered by Google handwriting fonts (*Great Vibes*, *Dancing Script*, *Caveat*, *Marck Script*).
+  - **Upload**: Upload PNG/JPEG signature stamps or company seals with full alpha-transparency preservation.
+- **Transform & Placement Box**: Drag to position anywhere, resize using corner handles with maintained aspect ratios, and commit.
 
-**Why not Streamlit?** Streamlit has no reliable way to return the exact pixel/point coordinates of a click on a rendered image, and this editor depends on that precision to match a click to the right text span and place new text exactly where you clicked. A small FastAPI + HTML/JS stack keeps that accuracy without pulling in a heavier framework.
+### 3. True Vector Whiteout & Legal Redaction
+- **Permanent Redaction**: Permanently cuts text glyphs out of the PDF stream—redacted text cannot be highlighted, selected, or inspected via dev tools.
+- **Whiteout Mode**: Seamlessly matches clean white paper backgrounds.
+- **Blackout Mode**: Applies high-contrast black redactions for sensitive legal, financial, or medical disclosures.
 
-## Getting Started
+### 4. Rich Annotations & Vector Shapes
+- **Text Highlighting**: Semi-transparent rectangular highlights with customizable palette (Yellow, Cyan, Emerald Green, Hot Pink).
+- **Freehand Pen**: Smooth vector drawing for markups, callouts, and manual approvals.
+- **Vector Shapes**: Insert crisp Rectangles, Circles/Ellipses, Lines, and Directional Arrows with adjustable stroke width and colors.
+
+### 5. Visual Page Management & Thumbnails
+- **Left Collapsible Drawer**: Live previews of every document page.
+- **Page Rotation**: 90° Clockwise or Counter-Clockwise page-level rotation.
+- **Page Operations**: Duplicate pages, insert blank pages before or after any page, or delete pages with safety validation.
+- **Quick Jump**: Jump directly to any page via click or direct numeric input.
+
+### 6. Document-Wide Find & Replace
+- Fast search across the active page or the entire document.
+- Case-sensitive and case-insensitive matching options.
+- Atomically replaces all matches and reports total replacement count.
+
+### 7. Non-Destructive Undo / Redo & Sample Document
+- Comprehensive session history stack supporting keyboard shortcuts (`Ctrl+Z`, `Ctrl+Y`).
+- Built-in **Sample Document Generator** (`⚡ Load Sample Proposal & Invoice PDF`) for instant 1-click live testing without needing an initial upload.
+- High-fidelity lossless PDF vector export (`<filename>_edited.pdf`).
+
+---
+
+## 🏗️ System Architecture
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                          Web Browser Client                            │
+│                                                                        │
+│  ┌────────────────────────┐  ┌──────────────────────────────────────┐  │
+│  │    Tool Ribbon UI      │  │        Interactive Canvas Layer      │  │
+│  │ (Text, Forms, Images,  │  │  - Rendered PDF Page Image (150 DPI) │  │
+│  │  Sign, Whiteout, etc.) │  │  - Interactive Span Bounding Boxes   │  │
+│  └───────────┬────────────┘  │  - WYSIWYG Inline Content-Editable   │  │
+│              │               │  - Magnetic Alignment Guidelines     │  │
+│              │               │  - Interactive Transform & Sign Box  │  │
+│              │               └──────────────────┬───────────────────┘  │
+└──────────────┼──────────────────────────────────┼──────────────────────┘
+               │                                  │
+               │ HTTP REST Requests (JSON / FormData)
+               ▼                                  ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        FastAPI Application Core                        │
+│                                                                        │
+│  ┌────────────────────────┐  ┌──────────────────────────────────────┐  │
+│  │    CORS Middleware     │  │          Session Store Manager       │  │
+│  │  (Multi-Origin Access) │  │  - In-Memory Document Registry       │  │
+│  └────────────────────────┘  │  - Dynamic Port & 0.0.0.0 Binding    │  │
+│  ┌────────────────────────┐  │  - Auto-Cleanup & OOM Guard          │  │
+│  │   Payload Size Guard   │  │  - Liveness Health Probe (/health)   │  │
+│  │   (50MB Maximum Cap)   │  └──────────────────┬───────────────────┘  │
+│  └────────────────────────┘                     │                      │
+└─────────────────────────────────────────────────┼──────────────────────┘
+                                                  │
+                                                  ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                       PyMuPDF Engine (fitz) Core                       │
+│                                                                        │
+│  ┌───────────────────────┐ ┌───────────────────────┐ ┌───────────────┐ │
+│  │  Font & Style Matcher │ │ Vector Stream Redactor│ │ Page Manager  │ │
+│  │  (Base-14 Detection)  │ │ (True Glyph Deletion) │ │ (Rotate/Move) │ │
+│  └───────────────────────┘ └───────────────────────┘ └───────────────┘ │
+│  ┌───────────────────────┐ ┌───────────────────────┐ ┌───────────────┐ │
+│  │   Annotation Engine   │ │ High-DPI Page Renderer│ │ Vector Export │ │
+│  │  (Ink, Shapes, Marks) │ │ (Crisp Web Pixmaps)   │ │ (Lossless PDF)│ │
+│  └───────────────────────┘ └───────────────────────┘ └───────────────┘ │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📁 Repository Structure
+
+```
+├── app.py                      # FastAPI REST application & session management
+├── Dockerfile                  # Production-optimized container build
+├── .dockerignore               # Docker build ignore rules
+├── Procfile                    # Cloud process declaration (Heroku/Render)
+├── render.yaml                 # 1-Click Render.com deployment manifest
+├── railway.json                # Railway.app configuration manifest
+├── requirements.txt            # Python dependencies (FastAPI, PyMuPDF, Uvicorn)
+├── run.bat                     # 1-click Windows launcher
+├── test_app_integration.py     # 14-point automated test suite
+├── pdf_editor/
+│   ├── annotations.py          # Whiteout, highlights, shapes, drawings, signatures
+│   ├── font_matcher.py         # Standard Base-14 font mapping & style matching
+│   ├── page_ops.py             # Rotation, duplication, deletion, blank page insertion
+│   ├── pdf_exporter.py         # Lossless PDF compilation & thumbnail generation
+│   ├── sample_doc.py           # Multi-page sample invoice/proposal generator
+│   └── text_editor.py          # In-place text replacement, alignment & repositioning
+└── static/
+    ├── index.html              # Modern, responsive single-page editor interface
+    ├── styles.css              # Dark/light theme styles, zero-offset inline box, guides
+    └── scripts.js              # State manager, canvas renderer, magnetic snapping logic
+```
+
+---
+
+## 🚀 Cloud Deployment Guide
+
+PDF Studio Pro is built from the ground up for zero-downtime, zero-configuration cloud hosting.
+
+### Cloud-Native Safeguards
+- **Dynamic Port Assignment**: Reads `PORT` from environment variables (`os.environ.get("PORT", 8000)`) and binds to `0.0.0.0`.
+- **Automated Memory Garbage Collection**: Active session tracker auto-prunes documents older than 2 hours or when memory thresholds are met, preventing OOM spikes on free/micro tier instances.
+- **50MB Upload Guard**: Safely catches and rejects oversized payloads before they consume memory.
+- **Health Check Endpoint**: Built-in `GET /api/health` responds with uptime status for container orchestrators.
+
+
+
+## 💻 Local Quick Start
 
 ### Prerequisites
+- Python 3.10+ installed
+- Git
 
-- Python 3.11
-- pip (installed with Python)
-- Windows 10/11, macOS, or Linux
+### 1. Clone & Set Up Virtual Environment
 
-### Installation
+```bash
+# Clone repository
+git clone https://github.com/lalkesh-ds/local_pdf_text_editor.git
+cd local_pdf_text_editor
 
-<details>
-<summary><strong>Windows (PowerShell)</strong></summary>
+# Create virtual environment
+python -m venv myenv
 
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
+# Activate virtual environment
+# Windows:
+.\myenv\Scripts\activate
+# macOS / Linux:
+source myenv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-If PowerShell refuses to run the activation script, run this once as your normal user (not an administrator), then activate again:
+### 2. Launch the Application
+
+```bash
+# Run with live reload
+uvicorn app:app --reload --host 127.0.0.1 --port 8000
+```
+
+On Windows, you can simply double-click **`run.bat`**.
+
+Open your browser at **[http://127.0.0.1:8000](http://127.0.0.1:8000)**.
+
+---
+
+## 🧪 Automated Testing
+
+PDF Studio Pro includes a comprehensive automated integration test suite covering the entire API lifecycle:
 
 ```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+# Run the test suite
+.\myenv\Scripts\python.exe test_app_integration.py
 ```
 
-</details>
+### Test Coverage Breakdown:
+1. `Test 1`: Sample PDF document generation
+2. `Test 2`: High-DPI page rendering & text span coordinate extraction
+3. `Test 3`: Thumbnail generation
+4. `Test 4`: In-place text editing with font, style, and color matching
+5. `Test 5`: Custom text insertion with ($x, y$) coordinate placement
+6. `Test 6`: Whiteout & underlying vector glyph redaction
+7. `Test 7`: Semi-transparent highlight annotations
+8. `Test 8`: Vector shapes (Rectangles, Circles, Directional Arrows)
+9. `Test 9`: Freehand ink pen strokes
+10. `Test 10`: Signature placement with custom dimensions
+11. `Test 11`: Page operations (Rotate 90°, Duplicate, Insert Blank)
+12. `Test 12`: Document-wide find & replace
+13. `Test 13`: Non-destructive session undo/redo
+14. `Test 14`: Clean vector PDF compilation and export
 
-<details>
-<summary><strong>macOS / Linux</strong></summary>
+---
 
-```bash
-python -m venv venv
-source venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+## 🔌 API Endpoints
 
-</details>
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/health` | Service liveness healthcheck |
+| `POST` | `/api/upload` | Upload PDF file (multipart form data, max 50MB) |
+| `POST` | `/api/load-sample` | Generate & load instant multi-page sample document |
+| `GET` | `/api/page/{id}/{num}` | Render page image and extract text span coordinates |
+| `GET` | `/api/thumbnails/{id}` | Generate thumbnails for all document pages |
+| `POST` | `/api/edit-text` | Edit text in-place, reposition ($x,y$), or adjust alignment |
+| `POST` | `/api/add-text` | Insert new text element at specific coordinates |
+| `POST` | `/api/delete-text` | Redact and erase text span |
+| `POST` | `/api/annotate` | Apply whiteout, highlight, shape, or freehand drawing |
+| `POST` | `/api/add-image` | Insert signature stamp or image with coordinates |
+| `POST` | `/api/page-op` | Execute page rotation, duplication, deletion, or insertion |
+| `POST` | `/api/find-replace`| Find and replace text occurrences document-wide |
+| `POST` | `/api/undo` | Revert to previous document state |
+| `POST` | `/api/redo` | Fast-forward to next document state |
+| `GET` | `/api/export/{id}` | Download clean, compiled vector PDF |
 
-### Running the App
+---
 
-```bash
-uvicorn app:app --host 127.0.0.1 --port 8000
-```
+## 🔒 Security & Privacy
 
-Open **http://127.0.0.1:8000** in your browser. To stop the server, return to the terminal and press `Ctrl+C`.
+- **No Remote Telemetry**: Zero external tracking, data analytics, or cloud font callouts on private documents.
+- **Isolated Memory Sessions**: Documents are kept in ephemeral memory sessions and automatically cleared upon session expiry.
+- **Lossless Redactions**: Text obscured by redactions is stripped from the vector stream, preventing reverse-engineering from raw PDF viewers.
 
-## Usage Guide
+---
 
-1. **Upload** a PDF from the start screen.
-2. The first page renders on the left, with invisible clickable regions positioned exactly over each text span.
-3. **Click existing text** to open it in the side panel, edit the text, and click **Save Change**. The server redacts the original span and inserts your new text using the original position, matched font, size, and color.
-4. **Click "＋ Add Text"**, then click anywhere on the page to place new text. Set its size, color, and style, then click **Place Text**.
-5. Step through your edits with **Undo / Redo**.
-6. Click **Export Edited PDF** to download `yourfile_edited.pdf`. Your original upload is left untouched.
+## 📄 License
 
-## Supported PDF Types
-
-| Type | Support |
-|------|---------|
-| Standard text PDFs (Word, Google Docs, LaTeX, "Print to PDF") | ✅ Fully supported |
-| Multi-page documents, mixed fonts/sizes/colors, bold/italic | ✅ Fully supported |
-| Complex layouts — multi-column, dense tables, text over images | ⚠️ Editable per-span; review results carefully |
-| Scanned or image-only PDFs | ❌ No extractable text layer (OCR is out of scope) |
-| Text converted to vector outlines/curves | ❌ No longer "real" text, so nothing to select |
-
-## Limitations
-
-- **Fonts are approximated, not reused exactly.** Embedded/subsetted PDF fonts generally can't be reused for freshly-typeset text, so every font is mapped to the closest of 14 standard fonts (Helvetica, Times, and Courier, each in regular/bold/italic/bold-italic). Visually close, but not pixel-perfect.
-- **Background matching is a best-effort sample**, not content-aware reconstruction. Solid-color backgrounds (including light colors) match well; gradients, patterns, and text sitting on an image may not reconstruct perfectly, since the edited area is covered with the nearest sampled color.
-- **Editing happens span-by-span**, using PyMuPDF's own text segmentation. Curved text, text converted to vector outlines, and unusual multi-column or table layouts may not be cleanly selectable.
-- **Scanned/image-only pages aren't editable** — there's no extractable text layer, and OCR is deliberately not part of this tool. Such pages are flagged in the viewer.
-- **Undo/redo is per-session and in-memory only.** Closing the app clears history; nothing is auto-saved.
-- **On-screen rendering uses page images** (for simple, offline-friendly display), but the **exported file is a real vector PDF** — existing images, vector graphics, and unedited text stay intact rather than being flattened.
-
-## Troubleshooting
-
-<details>
-<summary><code>pip install</code> fails on PyMuPDF</summary>
-
-Confirm you're on Python 3.11 (`python --version`) and that pip is current (`python -m pip install --upgrade pip`). PyMuPDF ships prebuilt wheels for Windows, macOS, and Linux, so a compiler shouldn't be needed.
-
-</details>
-
-<details>
-<summary>Port already in use</summary>
-
-Start the app on a different port, e.g. `uvicorn app:app --host 127.0.0.1 --port 8010`, and browse to `http://127.0.0.1:8010` instead.
-
-</details>
-
-<details>
-<summary>"This PDF is password-protected"</summary>
-
-Remove the password with another tool first — this editor doesn't attempt to crack or manage PDF passwords.
-
-</details>
-
-<details>
-<summary>My replacement text got shrunk a lot</summary>
-
-Shorten the text or accept the smaller font size. The app will warn you rather than silently overflow into surrounding content.
-
-</details>
-
-<details>
-<summary>A page shows a "scanned or image-based" warning</summary>
-
-That page has no extractable text layer (common for scans), so there's nothing for click-to-edit to select on it.
-
-</details>
-
-<details>
-<summary>The browser shows a blank page</summary>
-
-Check that the terminal shows `Uvicorn running on http://127.0.0.1:8000` with no errors, and that you're browsing to that exact address (not `0.0.0.0`).
-
-</details>
-
-## Project Structure
-
-```text
-local_pdf_text_editor/
-│
-├── app.py                   # FastAPI app: sessions + REST endpoints
-├── requirements.txt
-├── README.md
-│
-├── pdf_editor/
-│   ├── __init__.py
-│   ├── pdf_loader.py        # Validate & open PDFs, page dimensions
-│   ├── text_extractor.py    # Extract text spans (position/font/color)
-│   ├── text_editor.py       # Replace/add text, font fitting, redaction
-│   ├── font_matcher.py      # Map PDF fonts to Base14 fallback fonts
-│   ├── pdf_exporter.py      # Render page PNGs, export final PDF bytes
-│   └── edit_history.py      # In-memory undo/redo (byte snapshots)
-│
-├── static/
-│   ├── index.html
-│   ├── styles.css
-│   └── scripts.js           # Click-to-edit overlay, add-text, export
-│
-└── temp/                    # Reserved for local scratch use if needed
-    └── .gitkeep
-```
-
-## Privacy & Data Handling
-
-> Nothing leaves your machine. There's no upload step, no account, no database, and no telemetry.
-
-- All processing happens in a local FastAPI server on `localhost`
-- No file is ever sent to an external service
-- No accounts, sign-ins, or usage tracking
-- Undo/redo history lives in memory for the current session only and is discarded when the app closes
-
-## Extending This Project
-
-The backend is split into small, single-purpose modules (`pdf_loader`, `text_extractor`, `text_editor`, `font_matcher`, `pdf_exporter`, `edit_history`), so it's straightforward to adapt — for example, adding an OCR fallback for scanned pages, supporting additional font families, or wiring in a different export format. Fork it and adjust it for your own workflow.
-
-## License
-
-[MIT]
-
-## Acknowledgments
-
-- [PyMuPDF](https://pymupdf.readthedocs.io/) for PDF parsing, rendering, and editing
-- [FastAPI](https://fastapi.tiangolo.com/) for the backend server
+This project is licensed under the [MIT License](LICENSE). You are free to use this software for personal use.

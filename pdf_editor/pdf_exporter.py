@@ -28,6 +28,20 @@ def render_page_png_sized(
     return pix.tobytes("png"), pix.width, pix.height
 
 
+def render_thumbnail_png(page: fitz.Page, max_dim: int = 160) -> tuple[bytes, int, int]:
+    """Render a compact thumbnail image for page navigator."""
+    rect = page.rect
+    longest = max(rect.width, rect.height)
+    if longest <= 0:
+        scale = 0.2
+    else:
+        scale = max_dim / longest
+    scale = max(0.1, min(scale, 0.5))
+    matrix = fitz.Matrix(scale, scale)
+    pix = page.get_pixmap(matrix=matrix, alpha=False)
+    return pix.tobytes("png"), pix.width, pix.height
+
+
 def export_pdf_bytes(doc: fitz.Document) -> bytes:
     """
     Return the current working document as PDF bytes, preserving

@@ -1,117 +1,434 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Local PDF Text Editor</title>
-<link rel="stylesheet" href="/static/styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF Studio Pro - Modern Web & Cloud PDF Editor</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <!-- Google Fonts for handwriting signature styles and modern UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Dancing+Script:wght@700&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Marck+Script&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<header class="topbar">
-  <h1>Local PDF Text Editor</h1>
-  <span class="privacy-note">Your files stay on this computer.</span>
-</header>
-
-<p class="privacy-banner">
-  Your PDF is processed locally on this computer. No file is uploaded to a cloud server.
-</p>
-
-<div id="upload-screen" class="upload-screen">
-  <div class="upload-box">
-    <h2>Open a PDF</h2>
-    <input type="file" id="file-input" accept="application/pdf" />
-    <p id="upload-error" class="error-text"></p>
-  </div>
-</div>
-
-<div id="editor-screen" class="editor-screen hidden">
-
-  <div class="viewer-pane">
-    <div class="toolbar">
-      <button id="prev-page">◀ Prev</button>
-      <span>Page <input type="number" id="page-input" min="1" value="1" /> / <span id="page-count">1</span></span>
-      <button id="next-page">Next ▶</button>
-      <span class="divider"></span>
-      <button id="zoom-out">−</button>
-      <span id="zoom-level">150%</span>
-      <button id="zoom-in">+</button>
-      <span class="divider"></span>
-      <button id="add-text-mode" class="mode-btn">＋ Add Text</button>
-      <span class="divider"></span>
-      <button id="undo-btn" disabled>Undo</button>
-      <button id="redo-btn" disabled>Redo</button>
-      <span class="divider"></span>
-      <button id="export-btn" class="primary-btn">Export Edited PDF</button>
+  <!-- Top Global Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        <span>PDF<strong>Studio</strong><small style="font-size:10px;margin-left:4px;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">PRO</small></span>
+      </div>
+      <div id="doc-title" class="doc-title hidden">document.pdf</div>
+      <span class="privacy-pill">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+        </svg>
+        Secure & Private
+      </span>
     </div>
 
-    <p id="scanned-warning" class="warning-banner hidden">
-      This page appears to be scanned or image-based. Existing text may not be directly editable.
-    </p>
-    <p id="edit-warning" class="warning-banner hidden"></p>
+    <div class="header-center">
+      <button id="toggle-thumbs-btn" class="header-btn" title="Toggle Page Thumbnails (P)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span>Pages</span>
+      </button>
 
-    <div class="canvas-scroll">
-      <div id="page-container" class="page-container">
-        <img id="page-image" alt="PDF page" />
-        <div id="overlay-layer" class="overlay-layer"></div>
+      <div class="nav-cluster">
+        <button id="prev-page-btn" class="icon-btn" title="Previous Page">◀</button>
+        <span class="page-indicator">
+          Page <input type="number" id="page-num-input" min="1" value="1" /> / <span id="page-count-val">1</span>
+        </span>
+        <button id="next-page-btn" class="icon-btn" title="Next Page">▶</button>
+      </div>
+
+      <div class="divider-v"></div>
+
+      <div class="zoom-cluster">
+        <button id="zoom-out-btn" class="icon-btn" title="Zoom Out">−</button>
+        <span id="zoom-val-text" class="zoom-text">150%</span>
+        <button id="zoom-in-btn" class="icon-btn" title="Zoom In">+</button>
+        <button id="zoom-fit-btn" class="text-pill-btn" title="Fit to Width">Fit Width</button>
+      </div>
+
+      <div class="divider-v"></div>
+
+      <div class="history-cluster">
+        <button id="undo-btn" class="icon-btn" title="Undo (Ctrl+Z)" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7v6h6"></path>
+            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+          </svg>
+        </button>
+        <button id="redo-btn" class="icon-btn" title="Redo (Ctrl+Y)" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 7v6h-6"></path>
+            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button id="new-doc-btn" class="header-btn" title="Open another PDF">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+          <path d="M12 12v9"></path>
+          <path d="m16 16-4-4-4 4"></path>
+        </svg>
+        <span>Open</span>
+      </button>
+      <button id="export-btn" class="btn-primary" title="Export clean edited PDF">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Export PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Tool Ribbon -->
+  <nav class="tool-ribbon">
+    <div class="tool-ribbon-inner">
+      <button class="ribbon-btn active" data-tool="text" title="Edit existing text inline or click anywhere to add new text">
+        <span class="ribbon-icon">🔤</span>
+        <span class="ribbon-label">Text</span>
+      </button>
+      <button class="ribbon-btn" data-tool="forms" title="Add form fields & checkmarks">
+        <span class="ribbon-icon">☑️</span>
+        <span class="ribbon-label">Forms</span>
+      </button>
+      <button class="ribbon-btn" data-tool="image" title="Insert image or logo anywhere on the PDF">
+        <span class="ribbon-icon">🖼️</span>
+        <span class="ribbon-label">Images</span>
+      </button>
+      <button class="ribbon-btn" data-tool="sign" title="Draw, type, or upload your signature">
+        <span class="ribbon-icon">✍️</span>
+        <span class="ribbon-label">Sign</span>
+      </button>
+      <button class="ribbon-btn" data-tool="whiteout" title="Erase or redact any area cleanly">
+        <span class="ribbon-icon">⬜</span>
+        <span class="ribbon-label">Whiteout</span>
+      </button>
+      <button class="ribbon-btn" data-tool="annotate" title="Highlight text or freehand drawing">
+        <span class="ribbon-icon">🖍️</span>
+        <span class="ribbon-label">Annotate</span>
+      </button>
+      <button class="ribbon-btn" data-tool="shapes" title="Draw shapes: rectangle, circle, line, arrow">
+        <span class="ribbon-icon">🔷</span>
+        <span class="ribbon-label">Shapes</span>
+      </button>
+      <div class="ribbon-sep"></div>
+      <button class="ribbon-btn" data-tool="find_replace" title="Search and replace text in document">
+        <span class="ribbon-icon">🔍</span>
+        <span class="ribbon-label">Find & Replace</span>
+      </button>
+    </div>
+
+    <!-- Contextual Tool Sub-Bar -->
+    <div id="tool-subbar" class="tool-subbar">
+      <!-- Injected dynamically based on active tool -->
+      <div id="subbar-content" class="subbar-content">
+        <span class="subbar-hint">Click on any existing text to edit it in place, or click anywhere on empty space to type new text.</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Upload Screen (Welcome State) -->
+  <section id="upload-screen" class="upload-screen">
+    <div class="upload-card">
+      <div class="upload-icon-ring">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="12" y1="18" x2="12" y2="12"></line>
+          <line x1="9" y1="15" x2="15" y2="15"></line>
+        </svg>
+      </div>
+      <h2>Edit PDF Documents Freely & Securely</h2>
+      <p class="upload-subtitle">
+        In-place inline text editing, signatures, whiteout, images, annotations, and page management — fast, intuitive, and 100% private.
+      </p>
+
+      <div class="upload-dropzone" id="dropzone">
+        <input type="file" id="file-input" accept="application/pdf" class="file-input-hidden" />
+        <button type="button" class="btn-primary btn-large" onclick="document.getElementById('file-input').click()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Upload PDF File
+        </button>
+        <span class="dropzone-text">or drag and drop your PDF here</span>
+      </div>
+
+      <div class="sample-doc-action">
+        <span>Want to test immediately?</span>
+        <button id="load-sample-btn" class="btn-secondary">
+          ⚡ Load Sample Proposal & Invoice PDF
+        </button>
+      </div>
+
+      <p id="upload-error" class="error-msg"></p>
+    </div>
+  </section>
+
+  <!-- Main Editor Screen -->
+  <main id="editor-screen" class="editor-screen hidden">
+
+    <!-- Collapsible Page Thumbnails Drawer -->
+    <aside id="thumbnails-drawer" class="thumbnails-drawer">
+      <div class="drawer-header">
+        <span class="drawer-title">Pages (<span id="thumb-count-val">0</span>)</span>
+        <button id="add-blank-page-top" class="drawer-btn" title="Add blank page">＋ Blank</button>
+      </div>
+      <div id="thumbnails-list" class="thumbnails-list">
+        <!-- Rendered thumbnail cards -->
+      </div>
+    </aside>
+
+    <!-- Center Canvas Work Area -->
+    <div id="viewport-pane" class="viewport-pane">
+      <div id="scanned-banner" class="scanned-banner hidden">
+        ⚠️ This page appears to be a scanned image. OCR or direct text editing may be limited; you can use Whiteout or Add Text freely.
+      </div>
+      <div id="edit-banner" class="edit-banner hidden"></div>
+
+      <div id="canvas-scroll" class="canvas-scroll">
+        <div id="page-wrapper" class="page-wrapper">
+          <!-- The rendered PDF page image -->
+          <img id="page-image" class="page-image" alt="PDF Page" />
+
+          <!-- Transparent clickable text span overlay -->
+          <div id="overlay-layer" class="overlay-layer"></div>
+
+          <!-- Drawing canvas for shapes, highlights, whiteout drag, and pen strokes -->
+          <canvas id="drawing-canvas" class="drawing-canvas"></canvas>
+
+          <!-- Interactive Placement Box for Images & Signatures -->
+          <div id="transform-box" class="transform-box hidden">
+            <img id="transform-preview-img" class="transform-preview-img" alt="Transform preview" />
+            <div class="resize-handle handle-nw" data-handle="nw"></div>
+            <div class="resize-handle handle-ne" data-handle="ne"></div>
+            <div class="resize-handle handle-se" data-handle="se"></div>
+            <div class="resize-handle handle-sw" data-handle="sw"></div>
+            <div class="transform-toolbar">
+              <button id="confirm-transform-btn" class="trans-btn confirm" title="Confirm placement (Enter)">✓ Place</button>
+              <button id="cancel-transform-btn" class="trans-btn cancel" title="Cancel (Esc)">✕ Cancel</button>
+            </div>
+          </div>
+
+          <!-- Smart Snapping Alignment Guidelines -->
+          <div id="alignment-guides" class="alignment-guides"></div>
+
+          <!-- Inline Text Editor Box (WYSIWYG on page with floating Move Grip) -->
+          <div id="inline-editor" class="inline-editor hidden">
+            <div id="inline-drag-handle" class="inline-drag-handle" title="Drag to move text freely on page">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="5 9 2 12 5 15"></polyline>
+                <polyline points="9 5 12 2 15 5"></polyline>
+                <polyline points="15 19 12 22 9 19"></polyline>
+                <polyline points="19 9 22 12 19 15"></polyline>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <line x1="12" y1="2" x2="12" y2="22"></line>
+              </svg>
+              <span>Move</span>
+            </div>
+            <div id="inline-input" contenteditable="true" spellcheck="false" class="inline-input"></div>
+          </div>
+
+          <!-- Floating Text Format Bar (Contextual toolbar) -->
+          <div id="floating-text-toolbar" class="floating-text-toolbar hidden">
+            <div class="floating-row">
+              <!-- Auto-detected font info badge -->
+              <span id="fmt-auto-badge" class="fmt-auto-badge" title="Font style auto-detected from original PDF">Auto-matched</span>
+
+              <!-- Font Family Dropdown -->
+              <select id="fmt-font-family" class="fmt-select" title="Font Family">
+                <option value="sans">Helvetica / Arial (Sans)</option>
+                <option value="serif">Times Roman (Serif)</option>
+                <option value="mono">Courier (Monospace)</option>
+              </select>
+
+              <div class="fmt-sep"></div>
+
+              <!-- Font Size -->
+              <button id="fmt-size-down" class="fmt-btn" title="Decrease font size">−</button>
+              <input type="number" id="fmt-size-input" class="fmt-num" step="0.5" min="4" max="144" value="12" title="Font size in points" />
+              <button id="fmt-size-up" class="fmt-btn" title="Increase font size">+</button>
+
+              <div class="fmt-sep"></div>
+
+              <!-- Bold & Italic -->
+              <button id="fmt-bold" class="fmt-btn fmt-toggle" title="Bold"><strong>B</strong></button>
+              <button id="fmt-italic" class="fmt-btn fmt-toggle" title="Italic"><em>I</em></button>
+
+              <div class="fmt-sep"></div>
+
+              <!-- Text Alignment: Left, Center, Right -->
+              <div class="fmt-align-group">
+                <button id="fmt-align-left" class="fmt-btn fmt-align active" data-align="left" title="Align Left">⫷</button>
+                <button id="fmt-align-center" class="fmt-btn fmt-align" data-align="center" title="Align Center">≡</button>
+                <button id="fmt-align-right" class="fmt-btn fmt-align" data-align="right" title="Align Right">⫸</button>
+              </div>
+
+              <div class="fmt-sep"></div>
+
+              <!-- Color picker -->
+              <div class="color-picker-wrap" title="Text Color">
+                <input type="color" id="fmt-color" value="#000000" class="color-picker-input" />
+                <span id="fmt-color-indicator" class="color-indicator"></span>
+              </div>
+
+              <div class="fmt-sep"></div>
+
+              <!-- Delete text span button -->
+              <button id="fmt-delete" class="fmt-btn fmt-danger" title="Delete this text completely">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+
+              <!-- Apply / Done button -->
+              <button id="fmt-apply" class="fmt-btn fmt-confirm" title="Apply change (Enter)">✓ Done</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Signature Modal -->
+  <div id="signature-modal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>Create Signature</h3>
+        <button id="close-sig-modal" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-sig-tab="draw">Draw Signature</button>
+        <button class="modal-tab" data-sig-tab="type">Type Signature</button>
+        <button class="modal-tab" data-sig-tab="upload">Upload Image</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Tab 1: Draw Signature -->
+        <div id="sig-tab-draw" class="sig-tab-content">
+          <div class="canvas-wrapper">
+            <canvas id="sig-pad-canvas" width="580" height="200"></canvas>
+            <div class="sig-baseline"></div>
+          </div>
+          <div class="sig-controls-row">
+            <div class="color-chips">
+              <span class="chip-label">Ink:</span>
+              <button class="color-chip active" data-color="#000000" style="background:#000000"></button>
+              <button class="color-chip" data-color="#0d47a1" style="background:#0d47a1"></button>
+              <button class="color-chip" data-color="#1b5e20" style="background:#1b5e20"></button>
+            </div>
+            <div class="sig-actions">
+              <button id="clear-sig-pad" class="btn-text">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Type Signature -->
+        <div id="sig-tab-type" class="sig-tab-content hidden">
+          <input type="text" id="sig-name-input" class="sig-text-field" placeholder="Type your full name..." value="John Doe" />
+          <div class="sig-styles-grid">
+            <div class="sig-style-card selected" data-font="Great Vibes" style="font-family: 'Great Vibes', cursive;">
+              <span class="sig-style-preview">John Doe</span>
+              <span class="sig-style-tag">Great Vibes</span>
+            </div>
+            <div class="sig-style-card" data-font="Dancing Script" style="font-family: 'Dancing Script', cursive;">
+              <span class="sig-style-preview">John Doe</span>
+              <span class="sig-style-tag">Dancing Script</span>
+            </div>
+            <div class="sig-style-card" data-font="Caveat" style="font-family: 'Caveat', cursive;">
+              <span class="sig-style-preview">John Doe</span>
+              <span class="sig-style-tag">Caveat</span>
+            </div>
+            <div class="sig-style-card" data-font="Marck Script" style="font-family: 'Marck Script', cursive;">
+              <span class="sig-style-preview">John Doe</span>
+              <span class="sig-style-tag">Marck Script</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Upload Signature -->
+        <div id="sig-tab-upload" class="sig-tab-content hidden">
+          <div class="sig-upload-box" onclick="document.getElementById('sig-file-input').click()">
+            <input type="file" id="sig-file-input" accept="image/png,image/jpeg,image/webp" class="file-input-hidden" />
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></polyline>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <p>Click or drag to upload transparent signature image (PNG recommended)</p>
+          </div>
+          <div id="sig-upload-preview" class="sig-upload-preview hidden">
+            <img id="sig-upload-img" alt="Uploaded signature" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="cancel-sig-btn" class="btn-secondary">Cancel</button>
+        <button id="save-sig-btn" class="btn-primary">Place Signature</button>
       </div>
     </div>
   </div>
 
-  <div class="side-panel">
-    <div id="file-info" class="file-info"></div>
-
-    <div id="select-hint" class="hint">
-      Click on any existing text in the page to edit it, or use "Add Text" to place new text.
-    </div>
-
-    <div id="edit-panel" class="panel hidden">
-      <h3>Edit Text</h3>
-      <label>Current text</label>
-      <div id="current-text" class="readonly-text"></div>
-      <label for="replacement-text">Replacement text</label>
-      <textarea id="replacement-text" rows="4"></textarea>
-
-      <label>Font Size</label>
-      <div class="font-size-row">
-        <button id="font-size-minus" type="button">−</button>
-        <input type="number" id="font-size-input" step="0.5" min="0.5" />
-        <button id="font-size-plus" type="button">+</button>
-        <span>pt</span>
+  <!-- Find & Replace Modal -->
+  <div id="find-replace-modal" class="modal-overlay hidden">
+    <div class="modal-container modal-small">
+      <div class="modal-header">
+        <h3>Find & Replace</h3>
+        <button id="close-find-modal" class="modal-close-btn">&times;</button>
       </div>
-      <button id="font-size-reset" type="button" class="reset-link">Reset to Original Size</button>
-
-      <div class="span-meta" id="span-meta"></div>
-      <div class="panel-actions">
-        <button id="save-edit-btn" class="primary-btn">Save Change</button>
-        <button id="cancel-edit-btn">Cancel</button>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="find-search-input">Find text</label>
+          <input type="text" id="find-search-input" class="text-input" placeholder="Text to search..." />
+        </div>
+        <div class="form-group">
+          <label for="find-replace-input">Replace with</label>
+          <input type="text" id="find-replace-input" class="text-input" placeholder="New text..." />
+        </div>
+        <div class="form-row-checkbox">
+          <label><input type="checkbox" id="find-case-check" /> Match case</label>
+          <label><input type="checkbox" id="find-allpages-check" checked /> All pages</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancel-find-btn" class="btn-secondary">Cancel</button>
+        <button id="execute-replace-btn" class="btn-primary">Replace All</button>
       </div>
     </div>
-
-    <div id="add-panel" class="panel hidden">
-      <h3>Add New Text</h3>
-      <p class="hint small">Click a location on the page to place the text.</p>
-      <label for="add-text-input">Text</label>
-      <textarea id="add-text-input" rows="3"></textarea>
-      <label for="add-font-size">Font size</label>
-      <input type="number" id="add-font-size" value="12" min="4" max="200" />
-      <label for="add-color">Color</label>
-      <input type="color" id="add-color" value="#000000" />
-      <div class="checkbox-row">
-        <label><input type="checkbox" id="add-bold" /> Bold</label>
-        <label><input type="checkbox" id="add-italic" /> Italic</label>
-      </div>
-      <div class="panel-actions">
-        <button id="save-add-btn" class="primary-btn" disabled>Place Text</button>
-        <button id="cancel-add-btn">Cancel</button>
-      </div>
-    </div>
-
-    <div id="status-log" class="status-log"></div>
   </div>
 
-</div>
+  <!-- Hidden Image File Input for Image Tool -->
+  <input type="file" id="image-tool-input" accept="image/png,image/jpeg,image/webp" class="file-input-hidden" />
 
-<script src="/static/scripts.js"></script>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/static/scripts.js"></script>
 </body>
 </html>

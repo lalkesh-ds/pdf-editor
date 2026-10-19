@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+myenv/
+venv/
+ENV/
+env/
+.git/
+.gitignore
+.DS_Store
+temp/*
+!temp/.gitkeep
+test_app_integration.py
+run.bat

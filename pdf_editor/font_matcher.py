@@ -102,6 +102,18 @@ def sans_font_for_style(bold: bool, italic: bool) -> str:
     return _SANS[(bold, italic)]
 
 
+def font_for_family_and_style(family: str = "sans", bold: bool = False, italic: bool = False) -> str:
+    """Get the PyMuPDF Base14 font name for family and bold/italic style."""
+    fam = (family or "").lower().strip()
+    if "serif" in fam or "times" in fam:
+        table = _SERIF
+    elif "mono" in fam or "courier" in fam:
+        table = _MONO
+    else:
+        table = _SANS
+    return table[(bool(bold), bool(italic))]
+
+
 def hex_to_rgb01(hex_color: str) -> tuple[float, float, float]:
     hex_color = hex_color.lstrip("#")
     if len(hex_color) != 6:

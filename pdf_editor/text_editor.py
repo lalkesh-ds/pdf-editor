@@ -164,25 +164,18 @@ def replace_text(
     span: dict,
     new_text: str,
     font_size: float | None = None,
+    font_family: str | None = None,
+    color_hex: str | None = None,
+    bold: bool | None = None,
+    italic: bool | None = None,
+    x: float | None = None,
+    y: float | None = None,
+    align: str | None = None,
 ) -> EditResult:
     """
-    Replace the text described by `span` (as returned by
-    text_extractor.extract_page_spans) with `new_text` on the given
-    page, preserving position, font, color, and rotation, and leaving
-    the true original background fully intact.
-
-    Font size behavior:
-      - font_size=None (default): use the original span's font size.
-        It is only reduced - and only down to what's needed - if the
-        text doesn't fit the real available width around it (see
-        _available_width / _right_boundary above). For the vast
-        majority of edits (e.g. "B" -> "A+") the original size fits
-        comfortably and is kept unchanged.
-      - font_size=<number>: an explicit size chosen by the user via
-        the manual font-size control. That exact size is always used
-        - it is never silently overridden - and a warning is returned
-        only if it doesn't fit the available width, so the user can
-        decide whether to adjust it.
+    Replace the text described by `span` with `new_text` on the given
+    page, preserving original font size and style by default, while supporting
+    repositioning (x, y) and alignment (left, center, right).
     """
     page = doc[page_number]
     bbox = fitz.Rect(span["bbox"])
@@ -194,62 +187,89 @@ def replace_text(
     )
 
     if new_text.strip() == "":
-        # Treat "replace with empty text" as "delete the text" - just
-        # clear the original glyphs and leave the real background as-is.
+        # Treat "replace with empty text" as "delete the text"
         _clear_area(page, cover)
         return EditResult(success=True, warning=None, used_font_size=0)
 
-    fontname = font_matcher.map_to_base14(span["font"], 0)
-    color = font_matcher.hex_to_rgb01(span["color"])
-    rotation = span.get("rotation", 0) % 360
-    origin_x = span["origin"][0]
+    # 1. Font Style: Preserve exact original bold/italic unless overridden
+    use_bold = bold if bold is not None else span.get("bold", False)
+    use_italic = italic if italic is not None else span.get("italic", False)
 
-    available_width = _available_width(page, bbox, origin_x)
-
-    if font_size is not None:
-        # Explicit, user-chosen size - respect it exactly.
-        final_size = max(float(font_size), 0.5)
-        width = fitz.get_text_length(new_text, fontname=fontname, fontsize=final_size)
-        fits = width <= available_width
-        warning = None
-        if not fits:
-            warning = (
-                f"At {final_size:g}pt, the replacement text is wider than the "
-                "available space around the original text and may overflow "
-                "into nearby content. Reduce the font size or shorten the "
-                "text if you'd like it to fit cleanly."
-            )
+    # 2. Font Family: Match original font family unless overridden
+    if font_family:
+        fontname = font_matcher.font_for_family_and_style(font_family, use_bold, use_italic)
     else:
-        # No explicit size given - keep the original size whenever it fits
-        # the real available area; only shrink as far as truly necessary.
-        original_size = span["size"]
-        final_size, fits = _fit_font_size(
-            new_text, fontname, original_size, available_width
-        )
-        warning = None
-        if not fits:
-            warning = (
-                "The replacement text is too long to fit the available space "
-                f"around it even at the minimum font size ({MIN_FONT_SIZE:g}pt). "
-                "It has been inserted at the minimum size but may overflow "
-                "into nearby content - please shorten the text or set a "
-                "smaller font size."
-            )
+        clean = font_matcher.strip_subset_prefix(span.get("font", ""))
+        is_serif = bool(font_matcher._SERIF_HINTS.search(clean))
+        is_mono = bool(font_matcher._MONO_HINTS.search(clean))
+        fam = "serif" if is_serif else ("mono" if is_mono else "sans")
+        fontname = font_matcher.font_for_family_and_style(fam, use_bold, use_italic)
 
-    # 1) Remove only the original glyphs. Nothing is painted over the
-    #    area, so whatever real background existed there remains untouched.
+    # 3. Font Size: EXACTLY match original size by default (as user requested)
+    if font_size is not None and float(font_size) > 0:
+        final_size = float(font_size)
+    else:
+        final_size = float(span.get("size", 12.0))
+
+    # 4. Color: Match original color unless overridden
+    if color_hex:
+        color = font_matcher.hex_to_rgb01(color_hex)
+    else:
+        color = font_matcher.hex_to_rgb01(span.get("color", "#000000"))
+
+    rotation = span.get("rotation", 0) % 360
+
+    # 5. Position & Alignment
+    text_width = fitz.get_text_length(new_text, fontname=fontname, fontsize=final_size)
+
+    if x is not None and y is not None:
+        target_x = float(x)
+        target_y = float(y)
+    else:
+        target_x = float(span["origin"][0])
+        target_y = float(span["origin"][1])
+
+    # Apply alignment offset
+    align_mode = (align or "left").lower().strip()
+    if align_mode == "center":
+        if x is None and span.get("bbox"):
+            # Center within original span width
+            center_x = (span["bbox"][0] + span["bbox"][2]) / 2.0
+            target_x = center_x - (text_width / 2.0)
+        else:
+            target_x = target_x - (text_width / 2.0)
+    elif align_mode == "right":
+        if x is None and span.get("bbox"):
+            target_x = span["bbox"][2] - text_width
+        else:
+            target_x = target_x - text_width
+
+    # Redact / clear the original glyphs
     _clear_area(page, cover)
 
-    # 2) Insert the replacement text at the original baseline origin, so
-    #    it sits at exactly the same position as the text it replaced.
-    origin = fitz.Point(span["origin"][0], span["origin"][1])
+    # Insert the replacement text at the computed position
+    origin = fitz.Point(target_x, target_y)
     insert_kwargs = dict(fontname=fontname, fontsize=final_size, color=color)
     if rotation != 0:
         page.insert_text(origin, new_text, rotate=rotation, **insert_kwargs)
     else:
         page.insert_text(origin, new_text, **insert_kwargs)
 
-    return EditResult(success=True, warning=warning, used_font_size=final_size)
+    return EditResult(success=True, warning=None, used_font_size=final_size)
+
+
+def delete_text(doc: fitz.Document, page_number: int, span: dict) -> EditResult:
+    """Permanently delete text in span via PDF redaction."""
+    page = doc[page_number]
+    bbox = fitz.Rect(span["bbox"])
+    cover = fitz.Rect(
+        bbox.x0 - BBOX_PADDING,
+        bbox.y0 - BBOX_PADDING,
+        bbox.x1 + BBOX_PADDING,
+        bbox.y1 + BBOX_PADDING,
+    )
+    _clear_area(page, cover)
+    return EditResult(success=True, warning=None, used_font_size=0)
 
 
 def add_text(
@@ -259,19 +279,86 @@ def add_text(
     y: float,
     text: str,
     fontsize: float = 12.0,
+    font_family: str = "sans",
     color_hex: str = "#000000",
     bold: bool = False,
     italic: bool = False,
+    align: str = "left",
 ) -> EditResult:
-    """Insert a brand-new text object at PDF point (x, y) (baseline)."""
+    """Insert a brand-new text object at PDF point (x, y) with alignment."""
     if not text.strip():
         return EditResult(success=False, warning="Text cannot be empty.")
 
     page = doc[page_number]
-    fontname = font_matcher.sans_font_for_style(bold, italic)
+    fontname = font_matcher.font_for_family_and_style(font_family, bold, italic)
     color = font_matcher.hex_to_rgb01(color_hex)
 
+    text_width = fitz.get_text_length(text, fontname=fontname, fontsize=fontsize)
+    target_x = float(x)
+    align_mode = (align or "left").lower().strip()
+    if align_mode == "center":
+        target_x = target_x - (text_width / 2.0)
+    elif align_mode == "right":
+        target_x = target_x - text_width
+
     page.insert_text(
-        fitz.Point(x, y), text, fontname=fontname, fontsize=fontsize, color=color
+        fitz.Point(target_x, y), text, fontname=fontname, fontsize=fontsize, color=color
     )
     return EditResult(success=True, warning=None, used_font_size=fontsize)
+
+
+def find_and_replace(
+    doc: fitz.Document,
+    search_text: str,
+    replace_text_str: str,
+    page_num: int | None = None,
+    match_case: bool = False,
+) -> int:
+    """
+    Search for search_text across page_num (or all pages if None) and replace
+    occurrences with replace_text_str.
+    Returns the total count of replacements made.
+    """
+    if not search_text.strip():
+        return 0
+
+    pages_to_search = [page_num] if page_num is not None else list(range(doc.page_count))
+    total_replaced = 0
+
+    flags = 0 if match_case else 2  # 2 is case-insensitive in search_for
+
+    for pno in pages_to_search:
+        if not (0 <= pno < doc.page_count):
+            continue
+        page = doc[pno]
+        rects = page.search_for(search_text, flags=flags)
+        if not rects:
+            continue
+
+        # Sort rects from bottom to top so insertions don't affect coords
+        rects.sort(key=lambda r: (r.y0, r.x0), reverse=True)
+
+        for rect in rects:
+            # Clear existing text in rect
+            cover = fitz.Rect(
+                rect.x0 - BBOX_PADDING,
+                rect.y0 - BBOX_PADDING,
+                rect.x1 + BBOX_PADDING,
+                rect.y1 + BBOX_PADDING,
+            )
+            _clear_area(page, cover)
+
+            # Estimate font size from rect height
+            calc_size = max(rect.height * 0.82, 8.0)
+            baseline_y = rect.y1 - (rect.height * 0.18)
+
+            page.insert_text(
+                fitz.Point(rect.x0, baseline_y),
+                replace_text_str,
+                fontname="Helvetica",
+                fontsize=calc_size,
+                color=(0, 0, 0),
+            )
+            total_replaced += 1
+
+    return total_replaced
